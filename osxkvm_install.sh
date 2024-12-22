@@ -8,6 +8,47 @@ silent apt-get install -y curl sudo mc
 echo "Installed Dependencies"
 
 
+apt-get install qemu-system python3 fdisk mtools -y
+
+VERSION_KVM_OPENCORE="v21"
+REPO_KVM_OPENCORE="https://github.com/thenickdude/KVM-Opencore"
+wget $REPO_KVM_OPENCORE/releases/download/$VERSION_KVM_OPENCORE/OpenCore-$VERSION_KVM_OPENCORE.iso.gz -O opencore_kvm.iso.gz
+
+gzip -dk opencore_kvm.iso.gz
+mkdir -p extract
+START=$(sfdisk -l opencore_kvm.iso | grep -i -m 1 "EFI System" | awk '{print $2}')
+mcopy -bspmQ -i "opencore_kvm.iso@@${START}S" ::EFI "extract"
+
+SIZE=$(( 256*1024*1024 ))
+TOTAL=$(( SIZE-(34*512) ))
+LAST_LBA=$(( TOTAL/512 ))
+COUNT=$(( LAST_LBA-(2048-1) ))
+truncate -s "$SIZE" "OpenCore.img"
+{   echo "label: gpt"
+    echo "label-id: 1ACB1E00-3B8F-4B2A-86A4-D99ED21DCAEB"
+    echo "device: OpenCore.img"
+    echo "unit: sectors"
+    echo "first-lba: 34"
+    echo "last-lba: $LAST_LBA"
+    echo "sector-size: 512"
+    echo ""
+    echo "OpenCore.img1 : start=2048, size=$COUNT, type=C12A7328-F81F-11D2-BA4B-00A0C93EC93B, uuid=05157F6E-0AE8-4D1A-BEA5-AC172453D02C, name=\"primary\""
+} > partition.fdisk
+sfdisk -q "OpenCore.img" < partition.fdisk
+
+OFFSET=$(( 2048*512 ))
+echo "drive c: file=\"OpenCore.img\" partition=0 offset=$OFFSET" > /etc/mtools.conf
+mformat -F -M "512" -c "4" -T "$COUNT" -v "EFI" "C:"
+mcopy -bspmQ "extract/EFI" "C:"
+
+qemu-system-x86_64 --enable-kvm \
+ -machine pc-i440fx-2.8 \
+ -cpu Penryn,kvm=on,vendor=GenuineIntel \
+ -m 1024 \
+ -usb -device usb-kbd -device usb-mouse \
+ -device virtio-blk-pci,drive=MacHDD \
+ -drive id=MacHDD,if=none,format=raw,file=./OpenCore.img \
+ -vnc :0
 
 
 echo "Cleaning up"
