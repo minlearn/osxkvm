@@ -7,6 +7,8 @@ silent() { "$@" >/dev/null 2>&1; }
 silent apt-get install -y curl sudo mc
 echo "Installed Dependencies"
 
+cd /root
+
 mknod /dev/kvm c 10 232
 chmod 777 /dev/kvm
 chown root:kvm /dev/kvm
@@ -47,7 +49,9 @@ mformat -F -M "512" -c "4" -T "$COUNT" -v "EFI" "C:"
 mcopy -bspmQ "extract/EFI" "C:"
 
 wget https://github.com/dockur/macos/raw/refs/heads/master/src/fetch.py
-python3 ./fetch.py download
+python3 ./fetch.py download -o .
+
+qemu-img create -f qcow2 HD.img 100G
 
 qemu-system-x86_64 --enable-kvm \
  -machine q35 \
@@ -60,6 +64,8 @@ qemu-system-x86_64 --enable-kvm \
  -drive id=MacHDD,if=none,format=raw,file=./OpenCore.img \
  -device virtio-blk-pci,drive=MacHDD2 \
  -drive id=MacHDD2,if=none,format=dmg,file=./BaseSystem.dmg \
+ -device virtio-blk-pci,drive=MacHDD3 \
+ -drive id=MacHDD3,if=none,format=raw,file=./HD.img \
  -vnc :0
 
 
