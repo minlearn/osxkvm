@@ -50,12 +50,12 @@ wget https://github.com/dockur/macos/raw/refs/heads/master/src/fetch.py
 python3 ./fetch.py download
 
 qemu-system-x86_64 --enable-kvm \
- -machine q35-2.8 \
+ -machine q35 \
  -cpu Penryn,kvm=on,vendor=GenuineIntel \
  -m 1024 \
  -usb -device usb-kbd -device usb-mouse \
  -drive if=pflash,format=raw,readonly=on,file=/usr/share/OVMF/OVMF_CODE.fd \
- -drive if=pflash,format=raw,file=/usr/share/OVMF/OVMF_VARS-1024x768.fd \
+ -drive if=pflash,format=raw,file=/usr/share/OVMF/OVMF_VARS.fd \
  -device virtio-blk-pci,drive=MacHDD \
  -drive id=MacHDD,if=none,format=raw,file=./OpenCore.img \
  -device virtio-blk-pci,drive=MacHDD2 \
