@@ -8,7 +8,7 @@ silent apt-get install -y curl sudo mc
 echo "Installed Dependencies"
 
 mknod /dev/kvm c 10 232
-chmod 777 /dev/kvmchown
+chmod 777 /dev/kvm
 chown root:kvm /dev/kvm
 
 apt-get install qemu-system python3 fdisk mtools -y
